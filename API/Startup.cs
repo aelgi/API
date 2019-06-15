@@ -18,6 +18,7 @@ using System.Net;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using API.Services;
 
 namespace API
 {
@@ -33,30 +34,32 @@ namespace API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.Configure<JWTSettings>(Configuration.GetSection("JWTSettings"));
+            services.AddCors();
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
-            services.AddDbContext<GroceryListContext>(opt => opt.UseInMemoryDatabase());
-            services.AddDbContext<UserDbContext>(opt => opt.UseInMemoryDatabase());
+            var appSettingsSection = Configuration.GetSection("AppSettings");
+            services.Configure<AppSettings>(appSettingsSection);
 
-            services.AddIdentity<IdentityUser, IdentityRole>(opt =>
+            var appSettings = appSettingsSection.Get<AppSettings>();
+            var key = Encoding.ASCII.GetBytes(appSettings.Secret);
+            services.AddAuthentication(x =>
             {
-                opt.Password.RequireNonAlphanumeric = false;
-                opt.Password.RequireDigit = false;
-                opt.Password.RequireUppercase = false;
-            }).AddEntityFrameworkStores<UserDbContext>();
-            services.ConfigureApplicationCookie(options =>
+                x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(x =>
             {
-                options.Events = new CookieAuthenticationEvents
+                x.RequireHttpsMetadata = false;
+                x.SaveToken = true;
+                x.TokenValidationParameters = new TokenValidationParameters
                 {
-                    OnRedirectToLogin = ctx =>
-                    {
-                        ctx.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                        return Task.FromResult(0);
-                    }
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
                 };
             });
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddScoped<IUserService, UserService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -72,31 +75,9 @@ namespace API
             }
 
             app.UseHttpsRedirection();
-            app.UseExceptionHandler();
-            app.UseIdentity();
 
-            var secretKey = Configuration.GetSection("JWTSettings:SecretKey").Value;
-            var issuer = Configuration.GetSection("JWTSettings:Issuer").Value;
-            var audience = Configuration.GetSection("JWTSettings:Audience").Value;
-            var signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey));
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = signingKey,
-                ValidateIssuer = true,
-                ValidIssuer = issuer,
-                ValidateAudience = true,
-                ValidAudience = audience
-            };
-            app.UseJwtBearerAuthentication(new JwtBearerOptions
-            {
-                TokenValidationParameters = tokenValidationParameters
-            });
-            app.UseCookieAuthentication(new CookieAuthenticationOptions
-            {
-                AutomaticAuthenticate = false,
-                AutomaticChallenge = false
-            });
+            app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            app.UseAuthentication();
 
             app.UseMvc();
         }
