@@ -48,5 +48,17 @@ namespace API.Controllers
             var users = UserService.GetAll();
             return Ok(users);
         }
+
+        [AllowAnonymous]
+        [HttpPut]
+        public IActionResult RegisterUser([FromBody] BaseUser newUser)
+        {
+            var userDeets = UserService.RegisterUser(newUser);
+            if (userDeets == null)
+            {
+                return BadRequest();
+            }
+            return Created($"/users/{userDeets}", userDeets);
+        }
     }
 }

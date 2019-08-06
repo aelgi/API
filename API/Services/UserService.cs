@@ -15,6 +15,7 @@ namespace API.Services
     {
         UserWithToken Authenticate(string username, string password);
         IEnumerable<BaseUser> GetAll();
+        string RegisterUser(BaseUser newUser);
     }
     public class UserService : IUserService
     {
@@ -60,6 +61,19 @@ namespace API.Services
                 x.Password = null;
                 return x;
             });
+        }
+
+        public string RegisterUser(BaseUser newUser)
+        {
+            var existing = Context.Users.Where(x => x.Username == newUser.Username).FirstOrDefault();
+            if (existing != null)
+            {
+                return null;
+            }
+
+            var entry = Context.Users.Add(newUser);
+            Context.SaveChanges();
+            return entry.Entity.Id.ToString();
         }
     }
 }
