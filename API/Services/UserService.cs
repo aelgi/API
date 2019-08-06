@@ -13,28 +13,27 @@ namespace API.Services
 {
     public interface IUserService
     {
-        User Authenticate(string username, string password);
-        IEnumerable<User> GetAll();
+        UserWithToken Authenticate(string username, string password);
+        IEnumerable<BaseUser> GetAll();
     }
     public class UserService : IUserService
     {
-        private List<User> _users = new List<User>
-        {
-            new User { Id = 1, FirstName = "Test", LastName = "User", Username = "test", Password = "test" }
-        };
-
         private readonly AppSettings _appSettings;
+        public Context Context { get; }
 
-        public UserService(IOptions<AppSettings> appSettings)
+        public UserService(IOptions<AppSettings> appSettings, Context context)
         {
             _appSettings = appSettings.Value;
+            Context = context;
         }
 
-        public User Authenticate(string username, string password)
+        public UserWithToken Authenticate(string username, string password)
         {
-            var user = _users.SingleOrDefault(x => x.Username == username && x.Password == password);
+            var user = Context.Users.Where(x => x.Username == username && x.Password == password).FirstOrDefault();
 
             if (user == null) return null;
+
+            var tokenUser = new UserWithToken(user);
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
@@ -47,16 +46,16 @@ namespace API.Services
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
-            user.Token = tokenHandler.WriteToken(token);
+            tokenUser.Token = tokenHandler.WriteToken(token);
 
-            user.Password = null;
+            tokenUser.Password = null;
 
-            return user;
+            return tokenUser;
         }
 
-        public IEnumerable<User> GetAll()
+        public IEnumerable<BaseUser> GetAll()
         {
-            return _users.Select(x =>
+            return Context.Users.AsEnumerable().Select(x =>
             {
                 x.Password = null;
                 return x;

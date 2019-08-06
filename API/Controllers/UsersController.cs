@@ -10,6 +10,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
+    public class LoginCredentials
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
+    }
+
     [Authorize]
     [Route("[controller]")]
     [ApiController]
@@ -24,7 +30,7 @@ namespace API.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public IActionResult Login([FromBody] User userParam)
+        public IActionResult Login([FromBody] LoginCredentials userParam)
         {
             var user = UserService.Authenticate(userParam.Username, userParam.Password);
 
