@@ -42,11 +42,27 @@ namespace API.Controllers
             return Ok(user);
         }
 
-        [HttpGet]
-        public IActionResult GetAll()
+        [HttpPost("")]
+        public IActionResult UpdateUser([FromBody] BaseUser newUser)
         {
-            var users = UserService.GetAll();
-            return Ok(users);
+            var updated = UserService.UpdateUser(User.Identity.Name, newUser);
+            if (updated)
+            {
+                return Ok(newUser);
+            }
+            return BadRequest(new { message = "Details are invalid" });
+        }
+
+        [HttpGet]
+        public IActionResult GetUser()
+        {
+            var userId = User.Identity.Name;
+            var user = UserService.GetUserById(userId);
+            if (user != null)
+            {
+                return Ok(user);
+            }
+            return Unauthorized();
         }
 
         [AllowAnonymous]

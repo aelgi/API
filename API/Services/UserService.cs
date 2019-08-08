@@ -1,4 +1,5 @@
 ﻿using API.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -15,6 +16,8 @@ namespace API.Services
     {
         UserWithToken Authenticate(string username, string password);
         IEnumerable<BaseUser> GetAll();
+        BaseUser GetUserById(string id);
+        bool UpdateUser(string id, BaseUser newUser);
         string RegisterUser(BaseUser newUser);
     }
     public class UserService : IUserService
@@ -63,10 +66,49 @@ namespace API.Services
             });
         }
 
+        public BaseUser GetUserById(string userId)
+        {
+            try
+            {
+                var id = int.Parse(userId);
+                return Context.Users.Find(id);
+            }
+            catch(Exception ex)
+            {
+                return null;
+            }
+        }
+
+        public bool UpdateUser(string userId, BaseUser newUser)
+        {
+            try
+            {
+                var id = int.Parse(userId);
+                var existing = Context.Users.Where(x => x.Username == newUser.Username && x.Id != id).Any();
+                if (existing)
+                {
+                    return false;
+                }
+
+                if (id != newUser.Id)
+                {
+                    return false;
+                }
+
+                Context.Users.Update(newUser);
+                Context.SaveChanges();
+                return true;
+            }
+            catch(Exception ex)
+            {
+                return false;
+            }
+        }
+
         public string RegisterUser(BaseUser newUser)
         {
-            var existing = Context.Users.Where(x => x.Username == newUser.Username).FirstOrDefault();
-            if (existing != null)
+            var existing = Context.Users.Where(x => x.Username == newUser.Username).Any();
+            if (existing)
             {
                 return null;
             }
