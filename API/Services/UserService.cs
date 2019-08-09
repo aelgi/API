@@ -19,6 +19,7 @@ namespace API.Services
         BaseUser GetUserById(string id);
         bool UpdateUser(string id, BaseUser newUser);
         string RegisterUser(BaseUser newUser);
+        BaseUser GetCurrentUser(ClaimsPrincipal controllerUser);
     }
     public class UserService : IUserService
     {
@@ -79,6 +80,12 @@ namespace API.Services
             }
         }
 
+        public BaseUser GetCurrentUser(ClaimsPrincipal controllerUser)
+        {
+            var userId = controllerUser.Identity.Name;
+            return this.GetUserById(userId);
+        }
+
         public bool UpdateUser(string userId, BaseUser newUser)
         {
             try
@@ -112,6 +119,7 @@ namespace API.Services
             {
                 return null;
             }
+            newUser.Projects = new List<Project>();
 
             var entry = Context.Users.Add(newUser);
             Context.SaveChanges();

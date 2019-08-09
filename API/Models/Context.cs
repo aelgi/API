@@ -11,12 +11,14 @@ namespace API.Models
         public Context(DbContextOptions<Context> options) : base(options) { }
 
         public DbSet<BaseUser> Users { get; set; }
+        public DbSet<Project> Projects { get; set; }
+        public DbSet<Items> Items { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.Entity<BaseUser>().HasKey(x => x.Id);
-
             builder.Entity<BaseUser>().Property<DateTime>("UpdatedTimestamp");
+            builder.Entity<Project>().Property<DateTime>("UpdatedTimestamp");
+            builder.Entity<Items>().Property<DateTime>("UpdatedTimestamp");
 
             base.OnModelCreating(builder);
         }
@@ -26,6 +28,8 @@ namespace API.Models
             ChangeTracker.DetectChanges();
 
             updateUpdatedProperty<BaseUser>();
+            updateUpdatedProperty<Project>();
+            updateUpdatedProperty<Items>();
 
             return base.SaveChanges();
         }

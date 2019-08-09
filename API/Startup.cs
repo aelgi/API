@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using API.Services;
 using API.Models;
 using Microsoft.EntityFrameworkCore;
+using API.Filters;
 
 namespace API
 {
@@ -25,7 +26,10 @@ namespace API
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCors();
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc(options =>
+            {
+                options.Filters.Add(typeof(JsonExceptionFilter));
+            }).SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             var appSettingsSection = Configuration.GetSection("AppSettings");
             services.Configure<AppSettings>(appSettingsSection);
@@ -53,6 +57,7 @@ namespace API
             });
 
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IProjectService, ProjectService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

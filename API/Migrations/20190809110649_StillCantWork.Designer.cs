@@ -3,15 +3,17 @@ using System;
 using API.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace API.Migrations
 {
     [DbContext(typeof(Context))]
-    partial class ContextModelSnapshot : ModelSnapshot
+    [Migration("20190809110649_StillCantWork")]
+    partial class StillCantWork
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -48,13 +50,17 @@ namespace API.Migrations
 
                     b.Property<string>("Name");
 
-                    b.Property<int>("ProjectId");
+                    b.Property<int?>("ProjectId");
+
+                    b.Property<int?>("ProjectId1");
 
                     b.Property<DateTime>("UpdatedTimestamp");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
+
+                    b.HasIndex("ProjectId1");
 
                     b.ToTable("Items");
                 });
@@ -64,33 +70,43 @@ namespace API.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<int>("BaseUserId");
+                    b.Property<int?>("BaseUserId");
 
                     b.Property<string>("Name");
 
                     b.Property<DateTime>("UpdatedTimestamp");
 
+                    b.Property<int?>("UserId");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BaseUserId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Projects");
                 });
 
             modelBuilder.Entity("API.Models.Items", b =>
                 {
-                    b.HasOne("API.Models.Project", "Project")
+                    b.HasOne("API.Models.Project")
                         .WithMany("Items")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("ProjectId");
+
+                    b.HasOne("API.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId1");
                 });
 
             modelBuilder.Entity("API.Models.Project", b =>
                 {
-                    b.HasOne("API.Models.BaseUser", "User")
+                    b.HasOne("API.Models.BaseUser")
                         .WithMany("Projects")
-                        .HasForeignKey("BaseUserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("BaseUserId");
+
+                    b.HasOne("API.Models.BaseUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
                 });
 #pragma warning restore 612, 618
         }

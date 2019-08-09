@@ -60,7 +60,12 @@ namespace API.Controllers
             var user = UserService.GetUserById(userId);
             if (user != null)
             {
-                return Ok(user);
+                return Ok(new
+                {
+                    user.Id,
+                    user.FirstName,
+                    user.LastName,
+                });
             }
             return Unauthorized();
         }

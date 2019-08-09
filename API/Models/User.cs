@@ -22,7 +22,10 @@ namespace API.Models
         public string LastName { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
+
+        public List<Project> Projects { get; set; }
     }
+
     public class UserWithToken : BaseUser
     {
         public UserWithToken(BaseUser user) : base(user) { }
