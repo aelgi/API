@@ -30,9 +30,9 @@ namespace API.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginCredentials userParam)
+        public async Task<IActionResult> Login([FromBody] LoginCredentials userParam)
         {
-            var user = UserService.Authenticate(userParam.Username, userParam.Password);
+            var user = await UserService.Authenticate(userParam.Username, userParam.Password);
 
             if (user == null)
             {
@@ -43,9 +43,9 @@ namespace API.Controllers
         }
 
         [HttpPost("")]
-        public IActionResult UpdateUser([FromBody] BaseUser newUser)
+        public async Task<IActionResult> UpdateUser([FromBody] BaseUser newUser)
         {
-            var updated = UserService.UpdateUser(User.Identity.Name, newUser);
+            var updated = await UserService.UpdateUser(User.Identity.Name, newUser);
             if (updated)
             {
                 return Ok(newUser);
@@ -54,10 +54,9 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetUser()
+        public async Task<IActionResult> GetUser()
         {
-            var userId = User.Identity.Name;
-            var user = UserService.GetUserById(userId);
+            var user = await UserService.GetCurrentUser(User);
             if (user != null)
             {
                 return Ok(new
@@ -72,13 +71,9 @@ namespace API.Controllers
 
         [AllowAnonymous]
         [HttpPut]
-        public IActionResult RegisterUser([FromBody] BaseUser newUser)
+        public async Task<IActionResult> RegisterUser([FromBody] BaseUser newUser)
         {
-            var userDeets = UserService.RegisterUser(newUser);
-            if (userDeets == null)
-            {
-                return BadRequest();
-            }
+            var userDeets = await UserService.RegisterUser(newUser);
             return Created($"/users/{userDeets}", userDeets);
         }
     }

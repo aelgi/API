@@ -1,5 +1,7 @@
-﻿using API.Models;
+﻿using API.Exceptions;
+using API.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -14,12 +16,12 @@ namespace API.Services
 {
     public interface IUserService
     {
-        UserWithToken Authenticate(string username, string password);
-        IEnumerable<BaseUser> GetAll();
-        BaseUser GetUserById(string id);
-        bool UpdateUser(string id, BaseUser newUser);
-        string RegisterUser(BaseUser newUser);
-        BaseUser GetCurrentUser(ClaimsPrincipal controllerUser);
+        Task<UserWithToken> Authenticate(string username, string password);
+        Task<IEnumerable<BaseUser>> GetAll();
+        Task<BaseUser> GetUserById(string id);
+        Task<bool> UpdateUser(string id, BaseUser newUser);
+        Task<string> RegisterUser(BaseUser newUser);
+        Task<BaseUser> GetCurrentUser(ClaimsPrincipal controllerUser);
     }
     public class UserService : IUserService
     {
@@ -32,11 +34,11 @@ namespace API.Services
             Context = context;
         }
 
-        public UserWithToken Authenticate(string username, string password)
+        public async Task<UserWithToken> Authenticate(string username, string password)
         {
-            var user = Context.Users.Where(x => x.Username == username && x.Password == password).FirstOrDefault();
+            var user = await Context.Users.Where(x => x.Username == username && x.Password == password).FirstOrDefaultAsync();
 
-            if (user == null) return null;
+            if (user == null) throw new NotFoundException("User does not exist");
 
             var tokenUser = new UserWithToken(user);
 
@@ -58,40 +60,42 @@ namespace API.Services
             return tokenUser;
         }
 
-        public IEnumerable<BaseUser> GetAll()
+        public async Task<IEnumerable<BaseUser>> GetAll()
         {
-            return Context.Users.AsEnumerable().Select(x =>
+            return await Task.FromResult(Context.Users.AsEnumerable().Select(x =>
             {
                 x.Password = null;
                 return x;
-            });
+            }));
         }
 
-        public BaseUser GetUserById(string userId)
+        public async Task<BaseUser> GetUserById(string userId)
         {
             try
             {
                 var id = int.Parse(userId);
-                return Context.Users.Find(id);
+                var user = await Context.Users.FindAsync(id);
+                if (user == null) throw new NotFoundException("Could not find user");
+                return user;
             }
-            catch(Exception ex)
+            catch(Exception)
             {
-                return null;
+                throw new NotFoundException();
             }
         }
 
-        public BaseUser GetCurrentUser(ClaimsPrincipal controllerUser)
+        public async Task<BaseUser> GetCurrentUser(ClaimsPrincipal controllerUser)
         {
             var userId = controllerUser.Identity.Name;
-            return this.GetUserById(userId);
+            return await GetUserById(userId);
         }
 
-        public bool UpdateUser(string userId, BaseUser newUser)
+        public async Task<bool> UpdateUser(string userId, BaseUser newUser)
         {
             try
             {
                 var id = int.Parse(userId);
-                var existing = Context.Users.Where(x => x.Username == newUser.Username && x.Id != id).Any();
+                var existing = await Context.Users.Where(x => x.Username == newUser.Username && x.Id != id).AnyAsync();
                 if (existing)
                 {
                     return false;
@@ -103,26 +107,23 @@ namespace API.Services
                 }
 
                 Context.Users.Update(newUser);
-                Context.SaveChanges();
+                await Context.SaveChangesAsync();
                 return true;
             }
-            catch(Exception ex)
+            catch(Exception)
             {
                 return false;
             }
         }
 
-        public string RegisterUser(BaseUser newUser)
+        public async Task<string> RegisterUser(BaseUser newUser)
         {
-            var existing = Context.Users.Where(x => x.Username == newUser.Username).Any();
-            if (existing)
-            {
-                return null;
-            }
+            var existing = await Context.Users.Where(x => x.Username == newUser.Username).AnyAsync();
+            if (existing) throw new EntryExistsException();
             newUser.Projects = new List<Project>();
 
-            var entry = Context.Users.Add(newUser);
-            Context.SaveChanges();
+            var entry = await Context.Users.AddAsync(newUser);
+            await Context.SaveChangesAsync();
             return entry.Entity.Id.ToString();
         }
     }

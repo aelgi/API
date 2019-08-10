@@ -10,6 +10,7 @@ using API.Services;
 using API.Models;
 using Microsoft.EntityFrameworkCore;
 using API.Filters;
+using API.Middleware;
 
 namespace API
 {
@@ -58,6 +59,7 @@ namespace API
 
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IProjectService, ProjectService>();
+            services.AddScoped<ITodoService, TodoService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -76,6 +78,7 @@ namespace API
 
             app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
             app.UseAuthentication();
+            app.UseMiddleware<HttpExceptionMiddleware>();
 
             app.UseMvc();
         }

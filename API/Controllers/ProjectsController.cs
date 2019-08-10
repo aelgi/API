@@ -24,31 +24,30 @@ namespace API.Controllers
         }
 
         [HttpGet("")]
-        public IActionResult GetProjects()
+        public async Task<IActionResult> GetProjects()
         {
-            var user = UserService.GetCurrentUser(User);
-            var projects = ProjectService.GetAllProjects(user).Select(x => new {
-                Id = x.Id,
-                Name = x.Name
-            });
-            return Ok(projects);
+            var user = await UserService.GetCurrentUser(User);
+            var projects = await ProjectService.GetAllProjects(user);
+            return Ok(projects.Select(x => new
+            {
+                x.Id,
+                x.Name,
+            }));
         }
 
         [HttpGet("{projectId}")]
-        public IActionResult GetProject(string projectId)
+        public async Task<IActionResult> GetProject(string projectId)
         {
-            var user = UserService.GetCurrentUser(User);
-            var project = ProjectService.GetProjectById(user, projectId);
-            if (project == null)
-                return NotFound();
+            var user = await UserService.GetCurrentUser(User);
+            var project = await ProjectService.GetProjectById(user, projectId);
             return Ok(project);
         }
 
         [HttpPut("")]
-        public IActionResult CreateProject([FromBody] Project newProject)
+        public async Task<IActionResult> CreateProject([FromBody] Project newProject)
         {
-            var user = UserService.GetCurrentUser(User);
-            var id = ProjectService.CreateProject(user, newProject);
+            var user = await UserService.GetCurrentUser(User);
+            var id = await ProjectService.CreateProject(user, newProject);
             return Created($"/projects/{id}", id);
         }
     }

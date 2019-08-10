@@ -12,13 +12,13 @@ namespace API.Models
 
         public DbSet<BaseUser> Users { get; set; }
         public DbSet<Project> Projects { get; set; }
-        public DbSet<Items> Items { get; set; }
+        public DbSet<Item> Items { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<BaseUser>().Property<DateTime>("UpdatedTimestamp");
             builder.Entity<Project>().Property<DateTime>("UpdatedTimestamp");
-            builder.Entity<Items>().Property<DateTime>("UpdatedTimestamp");
+            builder.Entity<Item>().Property<DateTime>("UpdatedTimestamp");
 
             base.OnModelCreating(builder);
         }
@@ -29,7 +29,7 @@ namespace API.Models
 
             updateUpdatedProperty<BaseUser>();
             updateUpdatedProperty<Project>();
-            updateUpdatedProperty<Items>();
+            updateUpdatedProperty<Item>();
 
             return base.SaveChanges();
         }

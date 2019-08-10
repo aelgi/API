@@ -1,4 +1,6 @@
-﻿using API.Models;
+﻿using API.Exceptions;
+using API.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,9 +10,9 @@ namespace API.Services
 {
     public interface IProjectService
     {
-        IEnumerable<Project> GetAllProjects(BaseUser user);
-        Project GetProjectById(BaseUser user, string projectId);
-        string CreateProject(BaseUser user, Project project);
+        Task<IEnumerable<Project>> GetAllProjects(BaseUser user);
+        Task<Project> GetProjectById(BaseUser user, string projectId);
+        Task<string> CreateProject(BaseUser user, Project project);
     }
 
     public class ProjectService : IProjectService
@@ -22,36 +24,35 @@ namespace API.Services
             Context = context;
         }
 
-        public IEnumerable<Project> GetAllProjects(BaseUser user)
+        public async Task<IEnumerable<Project>> GetAllProjects(BaseUser user)
         {
-            if (user == null) return new List<Project>();
-            return Context.Projects.AsEnumerable();
+            var userProjects = await Context.Users.Include(x => x.Projects).Where(x => x.Id == user.Id).FirstAsync();
+            return userProjects.Projects;
         }
 
-        public Project GetProjectById(BaseUser user, string projectId)
+        public async Task<Project> GetProjectById(BaseUser user, string projectId)
         {
-            if (user == null) return null;
             try
             {
-                var projects = user.Projects;
                 var id = int.Parse(projectId);
-                return projects.Find(x => x.Id == id);
+                var project = await Context.Projects.Include(x => x.Items).Where(x => x.Id == id).FirstOrDefaultAsync();
+                if (project == null) throw new NotFoundException("Could not find project");
+                if (project.BaseUserId != user.Id) throw new NotFoundException("Project is not associated with user");
+                project.User = null;
+                return project;
             }
-            catch(Exception ex)
+            catch(Exception)
             {
-                return null;
+                throw new NotFoundException();
             }
         }
 
-        public string CreateProject(BaseUser user, Project project)
+        public async Task<string> CreateProject(BaseUser user, Project project)
         {
-            if (user.Projects == null)
-            {
-                user.Projects = new List<Project>();
-            }
-            Context.Users.Update(user);
-            user.Projects.Add(project);
-            Context.SaveChanges();
+            var linkedUser = await Context.Users.Include(x => x.Projects).Where(x => x.Id == user.Id).FirstAsync();
+            linkedUser.Projects.Add(project);
+            Context.Users.Update(linkedUser);
+            await Context.SaveChangesAsync();
             return project.Id.ToString();
         }
     }
