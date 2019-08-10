@@ -7,6 +7,6 @@ namespace API.Exceptions
 {
     public class InvalidIdException : HttpException
     {
-        public InvalidIdException() : base(400, "Invalid Id Passed") { }
+        public InvalidIdException() : base(423, "Invalid Id Passed") { }
     }
 }

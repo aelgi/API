@@ -71,17 +71,9 @@ namespace API.Services
 
         public async Task<BaseUser> GetUserById(string userId)
         {
-            try
-            {
-                var id = int.Parse(userId);
-                var user = await Context.Users.FindAsync(id);
-                if (user == null) throw new NotFoundException("Could not find user");
-                return user;
-            }
-            catch(Exception)
-            {
-                throw new NotFoundException();
-            }
+            var user = await Context.Users.Where(x => x.Id == userId).FirstOrDefaultAsync();
+            if (user == null) throw new InvalidIdException();
+            return user;
         }
 
         public async Task<BaseUser> GetCurrentUser(ClaimsPrincipal controllerUser)
@@ -92,35 +84,20 @@ namespace API.Services
 
         public async Task<bool> UpdateUser(string userId, BaseUser newUser)
         {
-            try
-            {
-                var id = int.Parse(userId);
-                var existing = await Context.Users.Where(x => x.Username == newUser.Username && x.Id != id).AnyAsync();
-                if (existing)
-                {
-                    return false;
-                }
+            var existing = await Context.Users.Where(x => x.Username == newUser.Username && x.Id != userId).AnyAsync();
+            if (existing) return false;
 
-                if (id != newUser.Id)
-                {
-                    return false;
-                }
+            if (userId != newUser.Id) return false;
 
-                Context.Users.Update(newUser);
-                await Context.SaveChangesAsync();
-                return true;
-            }
-            catch(Exception)
-            {
-                return false;
-            }
+            Context.Users.Update(newUser);
+            await Context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<string> RegisterUser(BaseUser newUser)
         {
             var existing = await Context.Users.Where(x => x.Username == newUser.Username).AnyAsync();
             if (existing) throw new EntryExistsException();
-            newUser.Projects = new List<Project>();
 
             var entry = await Context.Users.AddAsync(newUser);
             await Context.SaveChangesAsync();

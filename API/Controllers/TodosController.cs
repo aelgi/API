@@ -7,6 +7,12 @@ using System.Threading.Tasks;
 
 namespace API.Controllers
 {
+    public class TodoUpdateFields
+    {
+        public bool? Completed { get; set; }
+        public string Name { get; set; }
+    }
+
     [Authorize]
     [Route("projects/{projectId}/[controller]")]
     [ApiController]
@@ -39,6 +45,28 @@ namespace API.Controllers
             var project = await ProjectService.GetProjectById(user, projectId);
             var itemId = await TodoService.CreateItem(project, newItem);
             return Created($"/projects/{projectId}/todos/{itemId}", itemId);
+        }
+
+        [HttpPost("{itemId}")]
+        public async Task<IActionResult> UpdateItem(string projectId, string itemId, [FromBody] TodoUpdateFields newItem)
+        {
+            var user = await UserService.GetCurrentUser(User);
+            var project = await ProjectService.GetProjectById(user, projectId);
+            var item = await TodoService.GetItemById(project, itemId);
+
+            if (newItem.Completed.HasValue)
+            {
+                await TodoService.UpdateCompletedStatus(item, newItem.Completed.Value);
+                item = await TodoService.GetItemById(project, itemId);
+            }
+
+            if (newItem.Name != null)
+            {
+                await TodoService.UpdateName(item, newItem.Name);
+                item = await TodoService.GetItemById(project, itemId);
+            }
+
+            return Ok(item);
         }
     }
 }

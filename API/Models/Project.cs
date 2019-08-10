@@ -7,12 +7,9 @@ namespace API.Models
 {
     public class Project
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
         public string Name { get; set; }
 
-        public int BaseUserId { get; set; }
-        public BaseUser User { get; set; }
-
-        public List<Item> Items { get; set; }
+        public string BaseUserId { get; set; }
     }
 }

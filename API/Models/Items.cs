@@ -7,11 +7,10 @@ namespace API.Models
 {
     public class Item
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
         public string Name { get; set; }
         public bool Completed { get; set; }
 
-        public int ProjectId { get; set; }
-        public Project Project { get; set; }
+        public string ProjectId { get; set; }
     }
 }

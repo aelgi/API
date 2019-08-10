@@ -26,34 +26,24 @@ namespace API.Services
 
         public async Task<IEnumerable<Project>> GetAllProjects(BaseUser user)
         {
-            var userProjects = await Context.Users.Include(x => x.Projects).Where(x => x.Id == user.Id).FirstAsync();
-            return userProjects.Projects;
+            return await Task.FromResult(Context.Projects.Where(x => x.BaseUserId == user.Id).AsEnumerable());
         }
 
         public async Task<Project> GetProjectById(BaseUser user, string projectId)
         {
-            try
-            {
-                var id = int.Parse(projectId);
-                var project = await Context.Projects.Include(x => x.Items).Where(x => x.Id == id).FirstOrDefaultAsync();
-                if (project == null) throw new NotFoundException("Could not find project");
-                if (project.BaseUserId != user.Id) throw new NotFoundException("Project is not associated with user");
-                project.User = null;
-                return project;
-            }
-            catch(Exception)
-            {
-                throw new NotFoundException();
-            }
+            var project = await Context.Projects.FirstOrDefaultAsync(x => x.Id == projectId);
+            if (project == null) throw new NotFoundException("Could not find project");
+
+            if (project.BaseUserId != user.Id) throw new NotFoundException("Project is not associated with user");
+            return project;
         }
 
         public async Task<string> CreateProject(BaseUser user, Project project)
         {
-            var linkedUser = await Context.Users.Include(x => x.Projects).Where(x => x.Id == user.Id).FirstAsync();
-            linkedUser.Projects.Add(project);
-            Context.Users.Update(linkedUser);
+            project.BaseUserId = user.Id;
+            var entity = await Context.Projects.AddAsync(project);
             await Context.SaveChangesAsync();
-            return project.Id.ToString();
+            return entity.Entity.Id;
         }
     }
 }

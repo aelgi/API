@@ -13,6 +13,8 @@ namespace API.Services
         Task<IEnumerable<Item>> GetAllItems(Project project);
         Task<Item> GetItemById(Project project, string itemId);
         Task<string> CreateItem(Project project, Item item);
+        Task UpdateCompletedStatus(Item item, bool status);
+        Task UpdateName(Item item, string name);
     }
 
     public class TodoService : ITodoService
@@ -25,40 +27,38 @@ namespace API.Services
 
         public async Task<IEnumerable<Item>> GetAllItems(Project project)
         {
-            var projectItems = await Context.Projects.Include(x => x.Items).Where(x => x.Id == project.Id).FirstOrDefaultAsync();
-            if (projectItems == null) throw new NotFoundException("Could not find project");
-            return projectItems.Items;
+            return await Task.FromResult(Context.Items.Where(x => x.ProjectId == project.Id).AsEnumerable());
         }
 
         public async Task<Item> GetItemById(Project project, string itemId)
         {
-            int id;
+            var item = await Context.Items.Where(x => x.Id == itemId).FirstOrDefaultAsync();
+            if (item == null) throw new NotFoundException("Could not find item");
+            if (item.ProjectId != project.Id) throw new NotFoundException("Item is not attached to a project");
 
-            try
-            {
-                id = int.Parse(itemId);
-            }
-            catch(Exception)
-            {
-                throw new InvalidIdException();
-            }
-
-            var item = await Context.Items.FindAsync(id);
-            if (item == null) throw new NotFoundException("Could not locate item");
             return item;
         }
 
         public async Task<string> CreateItem(Project project, Item item)
         {
-            var linkedUser = await Context.Users.Include(x => x.Projects).ThenInclude(x => x.Items).Where(x => x.Id == project.BaseUserId).FirstAsync();
-            if (linkedUser == null) throw new NotFoundException("Could not find user");
-            var linkedProject = linkedUser.Projects.Find(x => x.Id == project.Id);
-            if (linkedProject == null) throw new NotFoundException("Could not find referenced project");
-
-            linkedProject.Items.Add(item);
-            Context.Users.Update(linkedUser);
+            item.ProjectId = project.Id;
+            var entity = await Context.Items.AddAsync(item);
             await Context.SaveChangesAsync();
-            return item.Id.ToString();
+            return entity.Entity.Id;
+        }
+
+        public async Task UpdateCompletedStatus(Item item, bool status)
+        {
+            item.Completed = status;
+            Context.Items.Update(item);
+            await Context.SaveChangesAsync();
+        }
+
+        public async Task UpdateName(Item item, string name)
+        {
+            item.Name = name;
+            Context.Items.Update(item);
+            await Context.SaveChangesAsync();
         }
     }
 }

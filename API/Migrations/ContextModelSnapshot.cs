@@ -21,7 +21,7 @@ namespace API.Migrations
 
             modelBuilder.Entity("API.Models.BaseUser", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<string>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("FirstName");
@@ -39,32 +39,30 @@ namespace API.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("API.Models.Items", b =>
+            modelBuilder.Entity("API.Models.Item", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<string>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<bool>("Completed");
 
                     b.Property<string>("Name");
 
-                    b.Property<int>("ProjectId");
+                    b.Property<string>("ProjectId");
 
                     b.Property<DateTime>("UpdatedTimestamp");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ProjectId");
 
                     b.ToTable("Items");
                 });
 
             modelBuilder.Entity("API.Models.Project", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<string>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<int>("BaseUserId");
+                    b.Property<string>("BaseUserId");
 
                     b.Property<string>("Name");
 
@@ -72,25 +70,7 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BaseUserId");
-
                     b.ToTable("Projects");
-                });
-
-            modelBuilder.Entity("API.Models.Items", b =>
-                {
-                    b.HasOne("API.Models.Project", "Project")
-                        .WithMany("Items")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("API.Models.Project", b =>
-                {
-                    b.HasOne("API.Models.BaseUser", "User")
-                        .WithMany("Projects")
-                        .HasForeignKey("BaseUserId")
-                        .OnDelete(DeleteBehavior.Cascade);
                 });
 #pragma warning restore 612, 618
         }
